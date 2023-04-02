@@ -1,4 +1,7 @@
-const NO_CASTLING: Castling = Castling { queen_side: false, king_side: false };
+const NO_CASTLING: Castling = Castling {
+    queen_side: false,
+    king_side: false,
+};
 const BOARD_SIZE: i32 = 8;
 const NO_VECT: Location = Location { x: 0, y: 0 };
 const QUEEN_SIDE_ROOK_X: i32 = 0;
@@ -60,12 +63,18 @@ pub enum ChessPiece {
 
 impl From<usize> for Location {
     fn from(val: usize) -> Self {
-        Location { x: (val % BOARD_SIZE as usize) as i32, y: (val / BOARD_SIZE as usize) as i32 }
+        Location {
+            x: (val % BOARD_SIZE as usize) as i32,
+            y: (val / BOARD_SIZE as usize) as i32,
+        }
     }
 }
 
 pub fn usize_to_location(position: usize) -> Location {
-    Location { x: (position % BOARD_SIZE as usize) as i32, y: (position / BOARD_SIZE as usize) as i32 }
+    Location {
+        x: (position % BOARD_SIZE as usize) as i32,
+        y: (position / BOARD_SIZE as usize) as i32,
+    }
 }
 
 pub fn get_opposite_color(color: ChessColor) -> ChessColor {
@@ -89,6 +98,19 @@ pub fn location_to_usize(location: Location) -> usize {
 }
 
 impl ChessPosition {
+    pub fn get_move_index(&self, chess_move: ChessMove) -> Option<u8> {
+        let possible_move = self.get_legal_moves().iter().position(|&r| r == chess_move);
+
+        match possible_move {
+            Some(index) => Some(index as u8),
+            None => None,
+        }
+    }
+    pub fn make_chess_move_from_index(&mut self, chess_move_index: u8) -> ChessMove {
+        let chess_move = self.get_legal_moves()[chess_move_index as usize];
+        *self = self.make_move(chess_move);
+        chess_move
+    }
     pub fn is_in_checkmate(&self) -> bool {
         self.get_legal_moves().is_empty() && self.is_in_check(self.turn)
     }
@@ -101,7 +123,12 @@ impl ChessPosition {
     }
     pub fn get_move_data(&self, from: Location, to: Location) -> ChessMove {
         let mut is_semi_legal = false;
-        let mut temp_move = ChessMove { origin: NO_VECT.into(), destination: NO_VECT.into(), move_type: MoveType::None, is_legal: false };
+        let mut temp_move = ChessMove {
+            origin: NO_VECT.into(),
+            destination: NO_VECT.into(),
+            move_type: MoveType::None,
+            is_legal: false,
+        };
         for pseudo_legal_move in self.get_piece_moves(from, self.turn, true) {
             if pseudo_legal_move.destination == to {
                 temp_move = pseudo_legal_move;
@@ -119,7 +146,10 @@ impl ChessPosition {
         let mut moves = Vec::new();
         for piece_index in 0..self.pieces.len() {
             for attempted_move in self.get_piece_moves(piece_index.into(), self.turn, true) {
-                if self.get_move_data(attempted_move.origin, attempted_move.destination).is_legal {
+                if self
+                    .get_move_data(attempted_move.origin, attempted_move.destination)
+                    .is_legal
+                {
                     moves.push(attempted_move);
                 }
             }
@@ -143,7 +173,9 @@ impl ChessPosition {
     pub fn is_under_attack(&self, position: Location, attacking_color: ChessColor) -> bool {
         for (index, piece) in self.pieces.iter().enumerate() {
             if get_piece_color(*piece) == attacking_color {
-                for possible_move in self.get_piece_moves(usize_to_location(index), attacking_color, false) {
+                for possible_move in
+                    self.get_piece_moves(usize_to_location(index), attacking_color, false)
+                {
                     if possible_move.destination == position {
                         return true;
                     }
@@ -172,11 +204,20 @@ impl ChessPosition {
             let distance_difference = chess_move.destination.x - chess_move.origin.x;
             let king_direction = distance_difference / distance_difference.abs();
             let rook_location = match king_direction {
-                1 => Location { x: chess_move.destination.x + king_direction, y: chess_move.destination.y },
-                -1 => Location { x: chess_move.destination.x + king_direction * 2, y: chess_move.destination.y },
+                1 => Location {
+                    x: chess_move.destination.x + king_direction,
+                    y: chess_move.destination.y,
+                },
+                -1 => Location {
+                    x: chess_move.destination.x + king_direction * 2,
+                    y: chess_move.destination.y,
+                },
                 _ => panic!(),
             };
-            let rook_destination = Location { x: chess_move.destination.x - king_direction, y: chess_move.destination.y };
+            let rook_destination = Location {
+                x: chess_move.destination.x - king_direction,
+                y: chess_move.destination.y,
+            };
             temp_position.set_piece(rook_destination, temp_position.get_piece(rook_location));
             temp_position.set_piece(rook_location, ChessPiece::None);
         }
@@ -225,14 +266,28 @@ impl ChessPosition {
     fn set_piece(&mut self, position: Location, piece: ChessPiece) {
         self.pieces[location_to_usize(position)] = piece;
     }
-    pub fn get_piece_moves(&self, position: Location, turn: ChessColor, include_castling: bool) -> Vec<ChessMove> {
+    pub fn get_piece_moves(
+        &self,
+        position: Location,
+        turn: ChessColor,
+        include_castling: bool,
+    ) -> Vec<ChessMove> {
         let mut moves: Vec<ChessMove> = Vec::new();
         if turn != get_piece_color(self.get_piece(position)) {
             return moves;
         }
         let straight_moves = vec![[0, 1], [0, -1], [-1, 0], [1, 0]];
         let diagonal_moves = vec![[-1, 1], [1, -1], [-1, -1], [1, 1]];
-        let knight_moves = [[-1, -2], [1, -2], [-2, -1], [2, -1], [-2, 1], [2, 1], [-1, 2], [1, 2]];
+        let knight_moves = [
+            [-1, -2],
+            [1, -2],
+            [-2, -1],
+            [2, -1],
+            [-2, 1],
+            [2, 1],
+            [-1, 2],
+            [1, 2],
+        ];
         let queen_moves = [straight_moves.clone(), diagonal_moves.clone()].concat();
         let piece = self.get_piece(position);
         let piece_color = get_piece_color(piece);
@@ -252,18 +307,39 @@ impl ChessPosition {
                 let mut target = position;
                 target.y += direction;
                 if vaild_position(target) && self.is_empty(target) {
-                    moves.push(ChessMove { origin: position, destination: target, move_type: MoveType::Relocation, is_legal: true });
+                    moves.push(ChessMove {
+                        origin: position,
+                        destination: target,
+                        move_type: MoveType::Relocation,
+                        is_legal: true,
+                    });
                     target.y += direction;
                     let pawn_on_starting_rank = position.y == starting_rank;
                     let is_empty_and_free_square = vaild_position(target) && self.is_empty(target);
                     if pawn_on_starting_rank && is_empty_and_free_square {
-                        moves.push(ChessMove { origin: position, destination: target, move_type: MoveType::LongMove, is_legal: true });
+                        moves.push(ChessMove {
+                            origin: position,
+                            destination: target,
+                            move_type: MoveType::LongMove,
+                            is_legal: true,
+                        });
                     }
                 }
                 for possible_capture in [[-1, direction], [1, direction]] {
-                    target = Location { x: position.x + possible_capture[0], y: position.y + possible_capture[1] };
-                    if vaild_position(target) && get_opposite_color(get_piece_color(self.get_piece(target))) == piece_color {
-                        moves.push(ChessMove { origin: position, destination: target, move_type: MoveType::Capture, is_legal: true });
+                    target = Location {
+                        x: position.x + possible_capture[0],
+                        y: position.y + possible_capture[1],
+                    };
+                    if vaild_position(target)
+                        && get_opposite_color(get_piece_color(self.get_piece(target)))
+                            == piece_color
+                    {
+                        moves.push(ChessMove {
+                            origin: position,
+                            destination: target,
+                            move_type: MoveType::Capture,
+                            is_legal: true,
+                        });
                     }
                 }
                 for possible_enpassant in [-1, 1] {
@@ -274,7 +350,12 @@ impl ChessPosition {
                             Some(en_passant_square) => {
                                 if en_passant_square == target {
                                     target.y += direction;
-                                    moves.push(ChessMove { origin: position, destination: target, move_type: MoveType::EnPassant, is_legal: true });
+                                    moves.push(ChessMove {
+                                        origin: position,
+                                        destination: target,
+                                        move_type: MoveType::EnPassant,
+                                        is_legal: true,
+                                    });
                                 }
                             }
                             _ => {}
@@ -284,13 +365,28 @@ impl ChessPosition {
             }
             ChessPiece::Knight(_) => {
                 for possible_move in knight_moves {
-                    let target = Location { x: position.x + possible_move[0], y: position.y + possible_move[1] };
+                    let target = Location {
+                        x: position.x + possible_move[0],
+                        y: position.y + possible_move[1],
+                    };
                     if vaild_position(target) {
-                        if get_piece_color(self.get_piece(target)) == get_opposite_color(piece_color) {
-                            moves.push(ChessMove { origin: position, destination: target, move_type: MoveType::Capture, is_legal: true });
+                        if get_piece_color(self.get_piece(target))
+                            == get_opposite_color(piece_color)
+                        {
+                            moves.push(ChessMove {
+                                origin: position,
+                                destination: target,
+                                move_type: MoveType::Capture,
+                                is_legal: true,
+                            });
                         }
                         if get_piece_color(self.get_piece(target)) == ChessColor::None {
-                            moves.push(ChessMove { origin: position, destination: target, move_type: MoveType::Relocation, is_legal: true });
+                            moves.push(ChessMove {
+                                origin: position,
+                                destination: target,
+                                move_type: MoveType::Relocation,
+                                is_legal: true,
+                            });
                         }
                     }
                 }
@@ -299,12 +395,28 @@ impl ChessPosition {
             ChessPiece::Rook(_, _) => return mover(self, position, straight_moves, turn),
             ChessPiece::Queen(_) => return mover(self, position, queen_moves, turn),
             ChessPiece::King(_) => {
-                for possible_move in [[-1, -1], [0, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [0, 1], [1, 1]] {
+                for possible_move in [
+                    [-1, -1],
+                    [0, -1],
+                    [1, -1],
+                    [-1, 0],
+                    [1, 0],
+                    [-1, 1],
+                    [0, 1],
+                    [1, 1],
+                ] {
                     let mut target = position;
                     target.x += possible_move[0];
                     target.y += possible_move[1];
-                    if vaild_position(target) && get_piece_color(self.get_piece(target)) != piece_color {
-                        moves.push(ChessMove { origin: position, destination: target, move_type: MoveType::Relocation, is_legal: true });
+                    if vaild_position(target)
+                        && get_piece_color(self.get_piece(target)) != piece_color
+                    {
+                        moves.push(ChessMove {
+                            origin: position,
+                            destination: target,
+                            move_type: MoveType::Relocation,
+                            is_legal: true,
+                        });
                     }
                 }
 
@@ -330,7 +442,8 @@ impl ChessPosition {
                                 if !vaild_position(target) {
                                     break;
                                 }
-                                let is_under_attack = !self.is_under_attack(target, get_opposite_color(piece_color));
+                                let is_under_attack =
+                                    !self.is_under_attack(target, get_opposite_color(piece_color));
                                 if !is_under_attack || self.get_piece(target) != ChessPiece::None {
                                     can_castle = false;
                                 }
@@ -344,7 +457,12 @@ impl ChessPosition {
                             if can_castle {
                                 let mut king_destination = position;
                                 king_destination.x += 2 * direction[side];
-                                moves.push(ChessMove { origin: position, destination: king_destination, move_type: MoveType::Castle, is_legal: true })
+                                moves.push(ChessMove {
+                                    origin: position,
+                                    destination: king_destination,
+                                    move_type: MoveType::Castle,
+                                    is_legal: true,
+                                })
                             }
                         }
                     }
@@ -360,7 +478,12 @@ pub fn vaild_position(click_position: Location) -> bool {
     (0..BOARD_SIZE).contains(&click_position.x) && (0..BOARD_SIZE).contains(&click_position.y)
 }
 
-fn mover(board_state: &ChessPosition, position: Location, directions: Vec<[i32; 2]>, turn: ChessColor) -> Vec<ChessMove> {
+fn mover(
+    board_state: &ChessPosition,
+    position: Location,
+    directions: Vec<[i32; 2]>,
+    turn: ChessColor,
+) -> Vec<ChessMove> {
     let mut moves: Vec<ChessMove> = Vec::new();
     for possible_move in directions {
         let mut target = position;
@@ -372,10 +495,20 @@ fn mover(board_state: &ChessPosition, position: Location, directions: Vec<[i32; 
                     break;
                 }
                 if turn == get_opposite_color(get_piece_color(board_state.get_piece(target))) {
-                    moves.push(ChessMove { origin: position, destination: target, move_type: MoveType::Capture, is_legal: true });
+                    moves.push(ChessMove {
+                        origin: position,
+                        destination: target,
+                        move_type: MoveType::Capture,
+                        is_legal: true,
+                    });
                     break;
                 }
-                moves.push(ChessMove { origin: position, destination: target, move_type: MoveType::Relocation, is_legal: true });
+                moves.push(ChessMove {
+                    origin: position,
+                    destination: target,
+                    move_type: MoveType::Relocation,
+                    is_legal: true,
+                });
             } else {
                 break;
             }
@@ -387,7 +520,12 @@ fn mover(board_state: &ChessPosition, position: Location, directions: Vec<[i32; 
 pub fn get_piece_color(piece: ChessPiece) -> ChessColor {
     match piece {
         ChessPiece::None => ChessColor::None,
-        ChessPiece::Pawn(color) | ChessPiece::Knight(color) | ChessPiece::Bishop(color) | ChessPiece::Rook(color, _) | ChessPiece::Queen(color) | ChessPiece::King(color) => color,
+        ChessPiece::Pawn(color)
+        | ChessPiece::Knight(color)
+        | ChessPiece::Bishop(color)
+        | ChessPiece::Rook(color, _)
+        | ChessPiece::Queen(color)
+        | ChessPiece::King(color) => color,
     }
 }
 
@@ -395,8 +533,14 @@ pub fn fen_parser(fen: &str) -> Result<ChessPosition, String> {
     let mut pieces = [ChessPiece::None; 64];
     let mut index: usize = 0;
     let split_fen: Vec<&str> = fen.split(' ').collect();
-    let mut white_castling = Castling { queen_side: false, king_side: false };
-    let mut black_castling = Castling { queen_side: false, king_side: false };
+    let mut white_castling = Castling {
+        queen_side: false,
+        king_side: false,
+    };
+    let mut black_castling = Castling {
+        queen_side: false,
+        king_side: false,
+    };
     for character in split_fen[0].chars() {
         if split_fen[2].contains('Q') {
             white_castling.queen_side = true;
@@ -442,16 +586,24 @@ pub fn fen_parser(fen: &str) -> Result<ChessPosition, String> {
     };
 
     if white_castling.queen_side {
-        pieces[(QUEEN_SIDE_ROOK_X + BOARD_SIZE * 7) as usize] = ChessPiece::Rook(ChessColor::White, RookType::QueenSide);
+        pieces[(QUEEN_SIDE_ROOK_X + BOARD_SIZE * 7) as usize] =
+            ChessPiece::Rook(ChessColor::White, RookType::QueenSide);
     }
     if white_castling.king_side {
-        pieces[(KING_SIDE_ROOK_X + BOARD_SIZE * 7) as usize] = ChessPiece::Rook(ChessColor::White, RookType::KingSide);
+        pieces[(KING_SIDE_ROOK_X + BOARD_SIZE * 7) as usize] =
+            ChessPiece::Rook(ChessColor::White, RookType::KingSide);
     }
     if black_castling.queen_side {
-        pieces[QUEEN_SIDE_ROOK_X as usize] = ChessPiece::Rook(ChessColor::Black, RookType::QueenSide);
+        pieces[QUEEN_SIDE_ROOK_X as usize] =
+            ChessPiece::Rook(ChessColor::Black, RookType::QueenSide);
     }
     if black_castling.queen_side {
         pieces[KING_SIDE_ROOK_X as usize] = ChessPiece::Rook(ChessColor::Black, RookType::KingSide);
     }
-    Ok(ChessPosition { pieces, turn, castle_data: [white_castling, black_castling], en_passant: None })
+    Ok(ChessPosition {
+        pieces,
+        turn,
+        castle_data: [white_castling, black_castling],
+        en_passant: None,
+    })
 }
