@@ -408,15 +408,25 @@ impl ChessPosition {
                     let mut target = position;
                     target.x += possible_move[0];
                     target.y += possible_move[1];
-                    if vaild_position(target)
-                        && get_piece_color(self.get_piece(target)) != piece_color
-                    {
-                        moves.push(ChessMove {
-                            origin: position,
-                            destination: target,
-                            move_type: MoveType::Relocation,
-                            is_legal: true,
-                        });
+                    if vaild_position(target) {
+                        if get_piece_color(self.get_piece(target))
+                            == get_opposite_color(piece_color)
+                        {
+                            moves.push(ChessMove {
+                                origin: position,
+                                destination: target,
+                                move_type: MoveType::Capture,
+                                is_legal: true,
+                            });
+                        }
+                        if get_piece_color(self.get_piece(target)) == ChessColor::None {
+                            moves.push(ChessMove {
+                                origin: position,
+                                destination: target,
+                                move_type: MoveType::Relocation,
+                                is_legal: true,
+                            });
+                        }
                     }
                 }
 
