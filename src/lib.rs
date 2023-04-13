@@ -7,6 +7,13 @@ const NO_VECT: Location = Location { x: 0, y: 0 };
 const QUEEN_SIDE_ROOK_X: i32 = 0;
 const KING_SIDE_ROOK_X: i32 = 7;
 
+#[derive(PartialEq)]
+pub enum BoardState {
+    InProgress,
+    Checkmate,
+    Stalemate,
+}
+
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub struct Location {
     pub x: i32,
@@ -111,8 +118,14 @@ impl ChessPosition {
         *self = self.make_move(chess_move);
         chess_move
     }
-    pub fn is_in_checkmate(&self) -> bool {
-        self.get_legal_moves().is_empty() && self.is_in_check(self.turn)
+    pub fn get_board_state(&self) -> BoardState {
+        if self.get_legal_moves().is_empty() && self.is_in_check(self.turn) {
+            return BoardState::Checkmate;
+        }
+        if self.get_legal_moves().is_empty() {
+            return BoardState::Stalemate;
+        }
+        BoardState::InProgress
     }
     pub fn make_move_if_possible(&mut self, from: Location, to: Location) -> ChessMove {
         let attempted_move = self.get_move_data(from, to);
@@ -184,7 +197,7 @@ impl ChessPosition {
         }
         false
     }
-    fn make_move(&self, chess_move: ChessMove) -> ChessPosition {
+    pub fn make_move(&self, chess_move: ChessMove) -> ChessPosition {
         let mut temp_position = *self;
         let moved_piece = temp_position.get_piece(chess_move.origin);
         let index = match get_piece_color(moved_piece) {
