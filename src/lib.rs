@@ -460,15 +460,23 @@ impl ChessPosition {
                         if possible[side] {
                             let mut can_castle = true;
                             let mut target = position;
-                            for _ in 0..length[side] {
+                            for i in 0..length[side] {
                                 target.x += direction[side];
                                 if !vaild_position(target) {
                                     break;
                                 }
                                 let is_under_attack =
-                                    !self.is_under_attack(target, get_opposite_color(piece_color));
-                                if !is_under_attack || self.get_piece(target) != ChessPiece::None {
-                                    can_castle = false;
+                                    self.is_under_attack(target, get_opposite_color(piece_color));
+                                if i != 2 {
+                                    if is_under_attack || self.get_piece(target) != ChessPiece::None
+                                    {
+                                        can_castle = false;
+                                    }
+                                } else {
+                                    // Hey, this is longer than the king can jump, we don't really care if it's attacked, just if it's blocked.
+                                    if self.get_piece(target) != ChessPiece::None {
+                                        can_castle = false;
+                                    }
                                 }
                             }
                             target.x += direction[side];
