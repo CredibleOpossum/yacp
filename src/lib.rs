@@ -60,7 +60,7 @@ pub enum RookType {
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum ChessPiece {
     None,
-    Pawn(ChessColor), // if pawn can be en passant'd
+    Pawn(ChessColor),
     Knight(ChessColor),
     Bishop(ChessColor),
     Rook(ChessColor, RookType),
